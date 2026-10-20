@@ -9,7 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
     "next": "16.4.2",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
