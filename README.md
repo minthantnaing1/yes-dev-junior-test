@@ -366,7 +366,7 @@ These commands were run during the assessment with the provided script. The figu
 | HTTP 5xx errors     |          0 |               0 |
 | Outcome             |   **PASS** |        **PASS** |
 
-The results above were observed during local testing. Screenshot files are not included in the documented repository structure; the commands above can be used to reproduce the checks using fresh future dates.
+The results above were observed during local testing. Screenshot files are included in the documented repository structure, public/results; the commands above can be used to reproduce the checks using fresh future dates.
 
 **Note:** The test inserts a successful booking, so rerunning it with an already-used date may produce 200 conflicts instead of one success. Select a new future `CHECK_IN` date when repeating the test.
 
