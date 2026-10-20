@@ -1,0 +1,187 @@
+{
+  "info": {
+    "_postman_id": "5875f57e-4d4b-4898-b0ad-068db316821d",
+    "name": "Resort Booking API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "55864962"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "{\r",
+              "  const loginResponse = pm.response.json();\r",
+              "\r",
+              "  if (pm.response.code === 200 && loginResponse.token) {\r",
+              "    pm.collectionVariables.set(\"token\", loginResponse.token);\r",
+              "  }\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"new.guest@example.com\",\r\n  \"password\": \"Passw0rd!\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Availability",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/rooms/1/availability?checkIn=2027-10-10&checkOut=2027-10-12",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "rooms",
+            "1",
+            "availability"
+          ],
+          "query": [
+            {
+              "key": "checkIn",
+              "value": "2027-10-10"
+            },
+            {
+              "key": "checkOut",
+              "value": "2027-10-12"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Pricing",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/pricing?roomId=1&checkIn=2027-10-10&checkOut=2027-10-12",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "pricing"
+          ],
+          "query": [
+            {
+              "key": "roomId",
+              "value": "1"
+            },
+            {
+              "key": "checkIn",
+              "value": "2027-10-10"
+            },
+            {
+              "key": "checkOut",
+              "value": "2027-10-12"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Booking",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"roomId\": 1,\r\n  \"checkIn\": \"2027-10-10\",\r\n  \"checkOut\": \"2027-10-12\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/bookings",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Booking Summary",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/bookings/summary",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "bookings",
+            "summary"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

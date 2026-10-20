@@ -7,25 +7,28 @@ export async function POST(req) {
   let client;
 
   try {
+    // 1. Authenticate user
     const decoded = verifyToken(req);
 
     if (!decoded || !Number.isInteger(decoded.userId)) {
       return Response.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // 2. Read request body
     const { roomId, checkIn, checkOut } = await req.json();
 
+    // 3. Validate booking input
     const validationError = validateBookingInput(roomId, checkIn, checkOut);
 
     if (validationError) {
       return Response.json({ message: validationError }, { status: 400 });
     }
 
-    // Start transaction
+    // 4. Start database transaction
     client = await pool.connect();
     await client.query("BEGIN");
 
-    // Lock room row
+    // 5. Lock room row to prevent concurrent double-booking
     const roomResult = await client.query(
       "SELECT * FROM rooms WHERE id = $1 FOR UPDATE",
       [roomId],
@@ -39,7 +42,7 @@ export async function POST(req) {
       return Response.json({ message: "Room not found" }, { status: 404 });
     }
 
-    // Check overlapping confirmed bookings
+    // 6. Check overlapping confirmed bookings
     const overlapResult = await client.query(
       `SELECT COUNT(*)::int AS occupied
        FROM bookings
@@ -52,15 +55,9 @@ export async function POST(req) {
 
     const occupied = overlapResult.rows[0].occupied;
 
+    // 7. Reject if no units remain
     if (occupied >= room.total_units) {
       await client.query("ROLLBACK");
-
-      await pool.query(
-        `INSERT INTO bookings
-       (user_id, room_id, check_in, check_out, status, total_price)
-     VALUES ($1, $2, $3, $4, 'rejected', 0)`,
-        [decoded.userId, roomId, checkIn, checkOut],
-      );
 
       return Response.json(
         { message: "Room is not available" },
@@ -68,7 +65,7 @@ export async function POST(req) {
       );
     }
 
-    // Get loyalty information from database
+    // 8. Get user's completed stays
     const userResult = await client.query(
       "SELECT completed_stays FROM users WHERE id = $1",
       [decoded.userId],
@@ -82,7 +79,7 @@ export async function POST(req) {
       return Response.json({ message: "User not found" }, { status: 401 });
     }
 
-    // Calculate total price
+    // 9. Calculate price using shared helper
     const pricing = calculatePrice(
       room,
       occupied,
@@ -91,18 +88,16 @@ export async function POST(req) {
       checkOut,
     );
 
-    const totalPrice = pricing.totalPrice;
-
-    // Insert booking
+    // 10. Insert confirmed booking
     const bookingResult = await client.query(
       `INSERT INTO bookings
          (user_id, room_id, check_in, check_out, total_price)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [decoded.userId, roomId, checkIn, checkOut, totalPrice],
+      [decoded.userId, roomId, checkIn, checkOut, pricing.totalPrice],
     );
 
-    // Commit transaction
+    // 11. Commit transaction
     await client.query("COMMIT");
 
     return Response.json(
@@ -113,7 +108,7 @@ export async function POST(req) {
       { status: 201 },
     );
   } catch (error) {
-    // 13. Roll back on error
+    // Roll back if a database operation failed
     if (client) {
       try {
         await client.query("ROLLBACK");
@@ -124,7 +119,7 @@ export async function POST(req) {
 
     console.error("Booking error:", error);
 
-    // PostgreSQL exclusion constraint violation
+    // PostgreSQL overlapping booking constraint
     if (error.code === "23P01") {
       return Response.json(
         { message: "Room is not available" },
@@ -132,7 +127,7 @@ export async function POST(req) {
       );
     }
 
-    // Invalid JSON
+    // Invalid JSON body
     if (error instanceof SyntaxError) {
       return Response.json(
         { message: "Invalid JSON request body" },
@@ -142,6 +137,7 @@ export async function POST(req) {
 
     return Response.json({ message: "Internal Server Error" }, { status: 500 });
   } finally {
+    // Always release database connection
     if (client) {
       client.release();
     }
